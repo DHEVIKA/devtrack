@@ -3,7 +3,7 @@ import ContributionHeatmap from "@/components/ContributionHeatmap";
 import FriendComparison from "@/components/FriendComparison";
 import StreakTracker from "@/components/StreakTracker";
 import LocalCodingTime from "@/components/LocalCodingTime";
-import CodingTimeCard from "@/components/CodingTimeCard";
+import CodingTimeWidget from "@/components/CodingTimeWidget";
 import PRMetrics from "@/components/PRMetrics";
 import CommunityMetrics from "@/components/CommunityMetrics";
 import PRBreakdownChart from "@/components/PRBreakdownChart";
@@ -15,7 +15,7 @@ export const defaultWidgets = [
   { id: "friendComparison", component: FriendComparison },
   { id: "streakTracker", component: StreakTracker },
   { id: "localCodingTime", component: LocalCodingTime },
-  { id: "codingTimeCard", component: CodingTimeCard },
+  { id: "codingTime", component: CodingTimeWidget },
   { id: "prMetrics", component: PRMetrics },
   { id: "communityMetrics", component: CommunityMetrics },
   { id: "prBreakdownChart", component: PRBreakdownChart },

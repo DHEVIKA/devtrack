@@ -19,7 +19,7 @@ import ExportButton from "@/components/ExportButton";
 import Link from "next/link";
 import PersonalRecords from "@/components/PersonalRecords";
 import LocalCodingTime from "@/components/LocalCodingTime";
-import CodingTimeCard from "@/components/CodingTimeCard";
+import CodingTimeWidget from "@/components/CodingTimeWidget";
 import RecentActivity from "@/components/RecentActivity";
 
 import { authOptions } from "@/lib/auth";
@@ -80,15 +80,23 @@ const CommitTimeChart = dynamic(
 );
 
 // =====================
+// Types
+// =====================
+type WidgetItem = {
+  id: string;
+  component: ComponentType<any>;
+};
+
+// =====================
 // Page
 // =====================
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) redirect("/");
-  if (session.error === "TokenRevoked") redirect("/");
+  if ((session as any)?.error === "TokenRevoked") redirect("/");
 
-  const widgets = [
+  const widgets: WidgetItem[] = [
     { id: "prMetrics", component: PRMetrics },
     { id: "communityMetrics", component: CommunityMetrics },
     { id: "prBreakdown", component: PRBreakdownChart },
@@ -164,7 +172,7 @@ export default async function DashboardPage() {
           <div>
             <StreakTracker />
             <LocalCodingTime />
-            <CodingTimeCard />
+            <CodingTimeWidget />
           </div>
         </div>
 
