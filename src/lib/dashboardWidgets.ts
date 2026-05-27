@@ -11,13 +11,13 @@ import CommitTimeChart from "@/components/CommitTimeChart";
 
 export const defaultWidgets = [
   { id: "contributionGraph", component: ContributionGraph },
-  { id: "heatmap", component: ContributionHeatmap },
+  { id: "contributionHeatmap", component: ContributionHeatmap },
   { id: "friendComparison", component: FriendComparison },
   { id: "streakTracker", component: StreakTracker },
-  { id: "localCoding", component: LocalCodingTime },
-  { id: "codingTime", component: CodingTimeCard },
+  { id: "localCodingTime", component: LocalCodingTime },
+  { id: "codingTimeCard", component: CodingTimeCard },
   { id: "prMetrics", component: PRMetrics },
   { id: "communityMetrics", component: CommunityMetrics },
-  { id: "prBreakdown", component: PRBreakdownChart },
-  { id: "commitTime", component: CommitTimeChart },
+  { id: "prBreakdownChart", component: PRBreakdownChart },
+  { id: "commitTimeChart", component: CommitTimeChart },
 ];

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
+
 interface CodingTimeData {
   hasData: boolean;
   not_configured?: boolean;

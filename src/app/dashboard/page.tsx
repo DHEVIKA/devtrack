@@ -21,16 +21,19 @@ import PersonalRecords from "@/components/PersonalRecords";
 import LocalCodingTime from "@/components/LocalCodingTime";
 import CodingTimeCard from "@/components/CodingTimeCard";
 import RecentActivity from "@/components/RecentActivity";
+
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+
 import DashboardSSEProvider from "@/components/DashboardSSEProvider";
 import DashboardClient from "@/components/DashboardClient";
 
-// =====================
-// Dynamic widgets
-// =====================
+import type { ComponentType } from "react";
 
+// =====================
+// Dynamic imports
+// =====================
 const ContributionGraph = dynamic(
   () => import("@/components/ContributionGraph"),
   { ssr: false }
@@ -79,38 +82,31 @@ const CommitTimeChart = dynamic(
 // =====================
 // Page
 // =====================
-
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) redirect("/");
   if (session.error === "TokenRevoked") redirect("/");
 
-  // =====================
-  // Draggable widgets
-  // =====================
-
   const widgets = [
-    { id: "prmetrics", component: PRMetrics },
-    { id: "community", component: CommunityMetrics },
-    { id: "prbreakdown", component: PRBreakdownChart },
-    { id: "committime", component: CommitTimeChart },
-    { id: "streak", component: StreakTracker },
-    { id: "issues", component: IssueMetrics },
-    { id: "ci", component: CIAnalytics },
-    { id: "language", component: LanguageBreakdown },
-    { id: "toprepos", component: TopRepos },
+    { id: "prMetrics", component: PRMetrics },
+    { id: "communityMetrics", component: CommunityMetrics },
+    { id: "prBreakdown", component: PRBreakdownChart },
+    { id: "commitTime", component: CommitTimeChart },
+    { id: "streakTracker", component: StreakTracker },
+    { id: "issueMetrics", component: IssueMetrics },
+    { id: "ciAnalytics", component: CIAnalytics },
+    { id: "languageBreakdown", component: LanguageBreakdown },
+    { id: "topRepos", component: TopRepos },
   ];
 
   return (
     <DashboardSSEProvider>
-      <div className="min-h-screen bg-[var(--background)] p-4 text-[var(--foreground)] transition-colors md:p-8">
+      <div className="min-h-screen bg-[var(--background)] p-4 text-[var(--foreground)] md:p-8">
 
-        {/* Header */}
         <DashboardHeader />
 
-        {/* Top Actions */}
-        <div className="mb-6 flex justify-end items-center gap-2">
+        <div className="mb-6 flex justify-end gap-2 items-center">
           <Link
             href="/wrapped"
             className="rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
@@ -128,14 +124,12 @@ export default async function DashboardPage() {
           <ExportButton />
         </div>
 
-        {/* Banner */}
         <StreakAtRiskBanner />
 
-        {/* Hero */}
         <div className="mb-6 mt-6">
           <Link href="/wrapped">
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-fuchsia-600 p-6 shadow-lg">
-              <div className="relative z-10 flex justify-between items-center">
+            <div className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-fuchsia-600 p-6 shadow-lg">
+              <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-white">
                     Your Year in Code is here! ✨
@@ -152,12 +146,10 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        {/* Summary */}
         <WeeklySummaryCard />
         <AIMentorWidget />
         <PersonalRecords />
 
-        {/* Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <ContributionGraph />
@@ -176,17 +168,14 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Repo analytics extra section */}
         <div className="mt-6">
           <RepoAnalyticsExplorer />
         </div>
 
-        {/* DRAGGABLE DASHBOARD */}
         <div className="mt-6">
           <DashboardClient widgets={widgets} />
         </div>
 
-        {/* Analytics */}
         <div className="mt-6">
           <ActivityRingChart />
         </div>
@@ -199,13 +188,11 @@ export default async function DashboardPage() {
           <PRReviewTrendChart />
         </div>
 
-        {/* Row 3 */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <IssueMetrics />
           <CIAnalytics />
         </div>
 
-        {/* Extra widgets */}
         <div className="mt-6">
           <DiscussionsWidget />
         </div>
@@ -218,7 +205,6 @@ export default async function DashboardPage() {
           <InactiveRepositoriesCard />
         </div>
 
-        {/* Bottom row */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <TopRepos />
           <LanguageBreakdown />
