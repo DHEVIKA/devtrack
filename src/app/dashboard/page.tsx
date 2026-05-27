@@ -10,6 +10,7 @@ import LanguageBreakdown from "@/components/LanguageBreakdown";
 import CIAnalytics from "@/components/CIAnalytics";
 import IssueMetrics from "@/components/IssueMetrics";
 import StreakAtRiskBanner from "@/components/StreakAtRiskBanner";
+import RepoAnalyticsExplorer from "@/components/repo-analytics/RepoAnalyticsExplorer";
 import dynamic from "next/dynamic";
 
 import WeeklySummaryCard from "@/components/WeeklySummaryCard";
@@ -26,9 +27,17 @@ import { redirect } from "next/navigation";
 import DashboardSSEProvider from "@/components/DashboardSSEProvider";
 import DashboardClient from "@/components/DashboardClient";
 
+// =====================
 // Dynamic widgets
-const CodingActivityInsightsCard = dynamic(
-  () => import("@/components/CodingActivityInsightsCard"),
+// =====================
+
+const ContributionGraph = dynamic(
+  () => import("@/components/ContributionGraph"),
+  { ssr: false }
+);
+
+const ContributionHeatmap = dynamic(
+  () => import("@/components/ContributionHeatmap"),
   { ssr: false }
 );
 
@@ -42,19 +51,20 @@ const ActivityRingChart = dynamic(
   { ssr: false }
 );
 
-const ContributionGraph = dynamic(
-  () => import("@/components/ContributionGraph"),
+const CodingActivityInsightsCard = dynamic(
+  () => import("@/components/CodingActivityInsightsCard"),
   { ssr: false }
 );
 
-const ContributionHeatmap = dynamic(
-  () => import("@/components/ContributionHeatmap"),
+const PRReviewTrendChart = dynamic(
+  () => import("@/components/PRReviewTrendChart"),
   { ssr: false }
 );
 
-const PRMetrics = dynamic(() => import("@/components/PRMetrics"), {
-  ssr: false,
-});
+const PRMetrics = dynamic(
+  () => import("@/components/PRMetrics"),
+  { ssr: false }
+);
 
 const PRBreakdownChart = dynamic(
   () => import("@/components/PRBreakdownChart"),
@@ -66,23 +76,25 @@ const CommitTimeChart = dynamic(
   { ssr: false }
 );
 
-const PRReviewTrendChart = dynamic(
-  () => import("@/components/PRReviewTrendChart"),
-  { ssr: false }
-);
+// =====================
+// Page
+// =====================
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
+
   if (!session) redirect("/");
   if (session.error === "TokenRevoked") redirect("/");
 
-  // ✅ IMPORTANT FIX: use COMPONENT REFERENCES, NOT JSX
+  // =====================
+  // Draggable widgets
+  // =====================
+
   const widgets = [
     { id: "prmetrics", component: PRMetrics },
     { id: "community", component: CommunityMetrics },
     { id: "prbreakdown", component: PRBreakdownChart },
     { id: "committime", component: CommitTimeChart },
-
     { id: "streak", component: StreakTracker },
     { id: "issues", component: IssueMetrics },
     { id: "ci", component: CIAnalytics },
@@ -93,9 +105,11 @@ export default async function DashboardPage() {
   return (
     <DashboardSSEProvider>
       <div className="min-h-screen bg-[var(--background)] p-4 text-[var(--foreground)] transition-colors md:p-8">
-        
+
+        {/* Header */}
         <DashboardHeader />
 
+        {/* Top Actions */}
         <div className="mb-6 flex justify-end items-center gap-2">
           <Link
             href="/wrapped"
@@ -114,6 +128,7 @@ export default async function DashboardPage() {
           <ExportButton />
         </div>
 
+        {/* Banner */}
         <StreakAtRiskBanner />
 
         {/* Hero */}
@@ -126,7 +141,7 @@ export default async function DashboardPage() {
                     Your Year in Code is here! ✨
                   </h2>
                   <p className="mt-1 text-white/90">
-                    Discover your top languages, streaks, and habits.
+                    Discover your coding insights and habits.
                   </p>
                 </div>
                 <div className="rounded-full bg-white px-6 py-2 font-bold text-purple-600">
@@ -137,6 +152,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
+        {/* Summary */}
         <WeeklySummaryCard />
         <AIMentorWidget />
         <PersonalRecords />
@@ -160,11 +176,17 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 🔥 DRAGGABLE DASHBOARD */}
+        {/* Repo analytics extra section */}
+        <div className="mt-6">
+          <RepoAnalyticsExplorer />
+        </div>
+
+        {/* DRAGGABLE DASHBOARD */}
         <div className="mt-6">
           <DashboardClient widgets={widgets} />
         </div>
 
+        {/* Analytics */}
         <div className="mt-6">
           <ActivityRingChart />
         </div>
@@ -183,6 +205,7 @@ export default async function DashboardPage() {
           <CIAnalytics />
         </div>
 
+        {/* Extra widgets */}
         <div className="mt-6">
           <DiscussionsWidget />
         </div>
@@ -195,6 +218,7 @@ export default async function DashboardPage() {
           <InactiveRepositoriesCard />
         </div>
 
+        {/* Bottom row */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <TopRepos />
           <LanguageBreakdown />
@@ -204,6 +228,7 @@ export default async function DashboardPage() {
         <div className="mt-6">
           <RecentActivity />
         </div>
+
       </div>
     </DashboardSSEProvider>
   );
