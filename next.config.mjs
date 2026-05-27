@@ -1,6 +1,10 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   output: "standalone",
+
+  // ✅ FIX FOR GOOGLE FONTS ERROR
+  optimizeFonts: false,
+
   images: {
     remotePatterns: [
       {
@@ -9,6 +13,7 @@ const nextConfig = {
       },
     ],
   },
+
   async headers() {
     return [
       {
