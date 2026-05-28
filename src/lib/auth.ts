@@ -16,8 +16,8 @@ const TOKEN_VALIDATION_INTERVAL_MS = 24 * 60 * 60 * 1000;
 export const authOptions: NextAuthOptions = {
   providers: [
     GitHubProvider({
-      clientId: process.env.GITHUB_ID ?? "",
-      clientSecret: process.env.GITHUB_SECRET ?? "",
+      clientId: process.env.GITHUB_ID!,
+clientSecret: process.env.GITHUB_SECRET!,
       authorization: {
         params: { scope: "read:user user:email read:discussion" },
       },

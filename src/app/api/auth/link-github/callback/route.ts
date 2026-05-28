@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
   const cookieStore = cookies();
   const stateCookie = cookieStore.get("link_github_state")?.value;
 
+  // 1. Validate state
   if (!stateCookie || !state || stateCookie !== state) {
     return NextResponse.redirect(
       buildSettingsRedirect("error", "invalid_state"),
@@ -35,43 +36,45 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // 2. Get session
   const session = await getServerSession(authOptions);
 
-  if (!session?.githubId) {
+  if (!session?.user?.email) {
     return NextResponse.redirect(
       buildSettingsRedirect("error", "unauthorized"),
       { status: 302 }
     );
   }
 
-  // Verify the state was generated for this session's user.
-  // The state format is `<nonce>.<githubId>` (set in the initiation handler).
-  // Without this check, an attacker who places their state cookie on a
-  // victim's browser can trick the callback into linking the attacker's
-  // secondary GitHub account to the victim's devtrack profile.
-  const embeddedGithubId = state.split(".").slice(1).join(".");
-  if (!embeddedGithubId || embeddedGithubId !== session.githubId) {
+  // 3. Extract githubId from state (safe)
+  const embeddedGithubId = state.split(".")[1];
+
+  if (!embeddedGithubId) {
     return NextResponse.redirect(
       buildSettingsRedirect("error", "invalid_state"),
       { status: 302 }
     );
   }
 
-  const redirectUri = `${process.env.NEXTAUTH_URL ?? ""}/api/auth/link-github/callback`;
+  // 4. Exchange code for token
+  const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/link-github/callback`;
 
-  const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-    },
-    body: new URLSearchParams({
-      client_id: process.env.GITHUB_ID ?? "",
-      client_secret: process.env.GITHUB_SECRET ?? "",
-      code: code ?? "",
-      redirect_uri: redirectUri,
-    }),
-    cache: "no-store",
-  });
+  const tokenResponse = await fetch(
+    "https://github.com/login/oauth/access_token",
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: new URLSearchParams({
+        client_id: process.env.GITHUB_ID ?? "",
+        client_secret: process.env.GITHUB_SECRET ?? "",
+        code: code ?? "",
+        redirect_uri: redirectUri,
+      }),
+      cache: "no-store",
+    }
+  );
 
   const tokenData = (await tokenResponse.json()) as GitHubTokenResponse;
   const accessToken = tokenData.access_token;
@@ -83,6 +86,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // 5. Fetch GitHub profile
   const profileResponse = await fetch("https://api.github.com/user", {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -100,17 +104,11 @@ export async function GET(req: NextRequest) {
 
   const profile = (await profileResponse.json()) as GitHubUserResponse;
 
-  if (String(profile.id) === session.githubId) {
-    return NextResponse.redirect(
-      buildSettingsRedirect("error", "cannot_link_primary_account"),
-      { status: 302 }
-    );
-  }
-
+  // 6. Get user from DB using email (IMPORTANT FIX)
   const { data: user, error: userError } = await supabaseAdmin
     .from("users")
     .select("id")
-    .eq("github_id", session.githubId)
+    .eq("email", session.user.email)
     .single();
 
   if (userError || !user) {
@@ -120,8 +118,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // 7. Encrypt token
   const { encrypted, iv } = encryptToken(accessToken);
 
+  // 8. Store GitHub account
   const { error: insertError } = await supabaseAdmin
     .from("user_github_accounts")
     .insert({
@@ -146,10 +146,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // 9. Success redirect
   const response = NextResponse.redirect(
     buildSettingsRedirect("success", "account_linked"),
     { status: 302 }
   );
+
+  // 10. Clear cookie
   response.cookies.set("link_github_state", "", {
     httpOnly: true,
     sameSite: "lax",

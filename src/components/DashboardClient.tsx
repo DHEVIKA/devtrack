@@ -18,12 +18,23 @@ import {
 } from "@dnd-kit/sortable";
 
 import { useEffect, useState } from "react";
-import SortableWidget from "@/components/SortableWidget";
 import { useSession } from "next-auth/react";
+
+import SortableWidget from "@/components/SortableWidget";
+
+// Widgets
+import PRMetrics from "@/components/PRMetrics";
+import CommunityMetrics from "@/components/CommunityMetrics";
+import PRBreakdownChart from "@/components/PRBreakdownChart";
+import CommitTimeChart from "@/components/CommitTimeChart";
+import StreakTracker from "@/components/StreakTracker";
+import IssueMetrics from "@/components/IssueMetrics";
+import CIAnalytics from "@/components/CIAnalytics";
+import LanguageBreakdown from "@/components/LanguageBreakdown";
+import TopRepos from "@/components/TopRepos";
 
 interface WidgetItem {
   id: string;
-  component: React.ComponentType<any>;
 }
 
 interface DashboardClientProps {
@@ -31,15 +42,33 @@ interface DashboardClientProps {
 }
 
 const STORAGE_KEY = "dashboard-layout";
+const HIDDEN_KEY = "hidden-widgets";
 
-export default function DashboardClient({ widgets }: DashboardClientProps) {
-  const [items, setItems] = useState<WidgetItem[]>([]);
+/**
+ * Map widget IDs → components
+ * (prevents passing components from server → client)
+ */
+const componentMap: Record<string, React.ComponentType<any>> = {
+  prMetrics: PRMetrics,
+  communityMetrics: CommunityMetrics,
+  prBreakdown: PRBreakdownChart,
+  commitTime: CommitTimeChart,
+  streakTracker: StreakTracker,
+  issueMetrics: IssueMetrics,
+  ciAnalytics: CIAnalytics,
+  languageBreakdown: LanguageBreakdown,
+  topRepos: TopRepos,
+};
+
+export default function DashboardClient({
+  widgets,
+}: DashboardClientProps) {
+  const [items, setItems] = useState<WidgetItem[]>(widgets);
   const [editMode, setEditMode] = useState(false);
   const [hidden, setHidden] = useState<string[]>([]);
 
-  // ✅ GET REAL USER
   const { data: session } = useSession();
-  const userId = session?.user?.email; // or id if available
+  const userId = session?.user?.email;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -50,17 +79,21 @@ export default function DashboardClient({ widgets }: DashboardClientProps) {
     })
   );
 
-  // Load layout + hidden
+  // =========================
+  // Load saved layout
+  // =========================
   useEffect(() => {
-    const savedLayout = localStorage.getItem(STORAGE_KEY);
-    const savedHidden = localStorage.getItem("hidden-widgets");
+    if (typeof window === "undefined") return;
 
-    if (savedHidden) {
-      setHidden(JSON.parse(savedHidden));
-    }
+    try {
+      const savedLayout = localStorage.getItem(STORAGE_KEY);
+      const savedHidden = localStorage.getItem(HIDDEN_KEY);
 
-    if (savedLayout) {
-      try {
+      if (savedHidden) {
+        setHidden(JSON.parse(savedHidden));
+      }
+
+      if (savedLayout) {
         const parsedIds: string[] = JSON.parse(savedLayout);
 
         const ordered = parsedIds
@@ -68,19 +101,19 @@ export default function DashboardClient({ widgets }: DashboardClientProps) {
           .filter(Boolean) as WidgetItem[];
 
         const missing = widgets.filter(
-          (w) => !ordered.some((o) => o.id === w.id)
+          (w) => !parsedIds.includes(w.id)
         );
 
         setItems([...ordered, ...missing]);
-      } catch {
-        setItems(widgets);
       }
-    } else {
+    } catch {
       setItems(widgets);
     }
   }, [widgets]);
 
+  // =========================
   // Save layout
+  // =========================
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
@@ -88,12 +121,16 @@ export default function DashboardClient({ widgets }: DashboardClientProps) {
     );
   }, [items]);
 
-  // Save hidden
+  // =========================
+  // Save hidden widgets
+  // =========================
   useEffect(() => {
-    localStorage.setItem("hidden-widgets", JSON.stringify(hidden));
+    localStorage.setItem(HIDDEN_KEY, JSON.stringify(hidden));
   }, [hidden]);
 
-  // ✅ FIXED HANDLE DRAG END
+  // =========================
+  // Drag handler
+  // =========================
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
@@ -105,29 +142,37 @@ export default function DashboardClient({ widgets }: DashboardClientProps) {
 
       const updated = arrayMove(prev, oldIndex, newIndex);
 
-      // 🔥 DB SYNC (FIXED USER)
+      // sync backend
       if (userId) {
         fetch("/api/dashboard-layout", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             userId,
             layout: updated.map((i) => i.id),
           }),
-        });
+        }).catch(() => {});
       }
 
       return updated;
     });
   }
 
+  // =========================
+  // Reset layout
+  // =========================
   function resetLayout() {
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem("hidden-widgets");
+    localStorage.removeItem(HIDDEN_KEY);
     setItems(widgets);
     setHidden([]);
   }
 
+  // =========================
+  // Toggle hide widget
+  // =========================
   function toggleHide(id: string) {
     setHidden((prev) =>
       prev.includes(id)
@@ -163,9 +208,7 @@ export default function DashboardClient({ widgets }: DashboardClientProps) {
           {hidden.map((id) => (
             <button
               key={id}
-              onClick={() =>
-                setHidden((prev) => prev.filter((x) => x !== id))
-              }
+              onClick={() => toggleHide(id)}
               className="rounded bg-gray-700 px-2 py-1 text-xs text-white"
             >
               Show {id}
@@ -188,7 +231,9 @@ export default function DashboardClient({ widgets }: DashboardClientProps) {
             {items
               .filter((w) => !hidden.includes(w.id))
               .map((widget) => {
-                const Component = widget.component;
+                const Component = componentMap[widget.id];
+
+                if (!Component) return null;
 
                 return (
                   <SortableWidget

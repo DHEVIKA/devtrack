@@ -29,8 +29,6 @@ import { redirect } from "next/navigation";
 import DashboardSSEProvider from "@/components/DashboardSSEProvider";
 import DashboardClient from "@/components/DashboardClient";
 
-import type { ComponentType } from "react";
-
 // =====================
 // Dynamic imports
 // =====================
@@ -64,38 +62,22 @@ const PRReviewTrendChart = dynamic(
   { ssr: false }
 );
 
-const PRMetrics = dynamic(
-  () => import("@/components/PRMetrics"),
-  { ssr: false }
-);
-
-const PRBreakdownChart = dynamic(
-  () => import("@/components/PRBreakdownChart"),
-  { ssr: false }
-);
-
-const CommitTimeChart = dynamic(
-  () => import("@/components/CommitTimeChart"),
-  { ssr: false }
-);
-
 // =====================
 // Types
 // =====================
 type WidgetItem = {
   id: string;
-  component: ComponentType<any>;
 };
 
 // =====================
 // Page
 // =====================
 export default async function DashboardPage() {
-  let session = null;
-
   // ==============================
   // SAFE SESSION HANDLING
   // ==============================
+  let session = null;
+
   try {
     session = await getServerSession(authOptions);
   } catch {
@@ -106,38 +88,39 @@ export default async function DashboardPage() {
   // E2E SAFE AUTH CHECK
   // ==============================
   const isE2E =
-  process.env.NODE_ENV === "test" ||
-  process.env.CI === "true" ||
-  process.env.PLAYWRIGHT === "true";
+    process.env.NODE_ENV === "test" ||
+    process.env.PLAYWRIGHT === "true";
 
+  // Protect dashboard for real users
   if (!session && !isE2E) {
     redirect("/");
   }
 
-  // ==============================
-  // TOKEN REVOKED
-  // ==============================
-  if ((session as any)?.error === "TokenRevoked" && !isE2E) {
+  // Block revoked tokens
+  if ((session as any)?.error === "TokenRevoked") {
     redirect("/");
   }
 
+  // ==============================
+  // Dashboard widgets
+  // ==============================
   const widgets: WidgetItem[] = [
-    { id: "prMetrics", component: PRMetrics },
-    { id: "communityMetrics", component: CommunityMetrics },
-    { id: "prBreakdown", component: PRBreakdownChart },
-    { id: "commitTime", component: CommitTimeChart },
-    { id: "streakTracker", component: StreakTracker },
-    { id: "issueMetrics", component: IssueMetrics },
-    { id: "ciAnalytics", component: CIAnalytics },
-    { id: "languageBreakdown", component: LanguageBreakdown },
-    { id: "topRepos", component: TopRepos },
+    { id: "prMetrics" },
+    { id: "communityMetrics" },
+    { id: "prBreakdown" },
+    { id: "commitTime" },
+    { id: "streakTracker" },
+    { id: "issueMetrics" },
+    { id: "ciAnalytics" },
+    { id: "languageBreakdown" },
+    { id: "topRepos" },
   ];
 
   return (
     <DashboardSSEProvider>
       <div className="min-h-screen bg-[var(--background)] p-4 text-[var(--foreground)] md:p-8">
-
-        {/* Stable SSR heading for Playwright */}
+        
+        {/* Stable heading for Playwright */}
         <h1 className="mb-4 text-3xl font-bold text-[var(--foreground)]">
           Dashboard
         </h1>
@@ -213,6 +196,7 @@ export default async function DashboardPage() {
           <RepoAnalyticsExplorer />
         </div>
 
+        {/* Drag & Drop Widgets */}
         <div className="mt-6">
           <DashboardClient widgets={widgets} />
         </div>
@@ -255,7 +239,6 @@ export default async function DashboardPage() {
         <div className="mt-6">
           <RecentActivity />
         </div>
-
       </div>
     </DashboardSSEProvider>
   );
