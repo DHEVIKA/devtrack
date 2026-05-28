@@ -1,5 +1,4 @@
 import DiscussionsWidget from "@/components/DiscussionsWidget";
-import CommunityMetrics from "@/components/CommunityMetrics";
 import GoalTracker from "@/components/GoalTracker";
 import DashboardHeader from "@/components/DashboardHeader";
 import StreakTracker from "@/components/StreakTracker";
@@ -29,53 +28,20 @@ import { redirect } from "next/navigation";
 import DashboardSSEProvider from "@/components/DashboardSSEProvider";
 import DashboardClient from "@/components/DashboardClient";
 
-// =====================
 // Dynamic imports
-// =====================
-const ContributionGraph = dynamic(
-  () => import("@/components/ContributionGraph"),
-  { ssr: false }
-);
+const ContributionGraph = dynamic(() => import("@/components/ContributionGraph"), { ssr: false });
+const ContributionHeatmap = dynamic(() => import("@/components/ContributionHeatmap"), { ssr: false });
+const FriendComparison = dynamic(() => import("@/components/FriendComparison"), { ssr: false });
+const ActivityRingChart = dynamic(() => import("@/components/ActivityRingChart"), { ssr: false });
+const CodingActivityInsightsCard = dynamic(() => import("@/components/CodingActivityInsightsCard"), { ssr: false });
+const PRReviewTrendChart = dynamic(() => import("@/components/PRReviewTrendChart"), { ssr: false });
 
-const ContributionHeatmap = dynamic(
-  () => import("@/components/ContributionHeatmap"),
-  { ssr: false }
-);
-
-const FriendComparison = dynamic(
-  () => import("@/components/FriendComparison"),
-  { ssr: false }
-);
-
-const ActivityRingChart = dynamic(
-  () => import("@/components/ActivityRingChart"),
-  { ssr: false }
-);
-
-const CodingActivityInsightsCard = dynamic(
-  () => import("@/components/CodingActivityInsightsCard"),
-  { ssr: false }
-);
-
-const PRReviewTrendChart = dynamic(
-  () => import("@/components/PRReviewTrendChart"),
-  { ssr: false }
-);
-
-// =====================
 // Types
-// =====================
 type WidgetItem = {
   id: string;
 };
 
-// =====================
-// Page
-// =====================
 export default async function DashboardPage() {
-  // ==============================
-  // SAFE SESSION HANDLING
-  // ==============================
   let session = null;
 
   try {
@@ -84,26 +50,18 @@ export default async function DashboardPage() {
     session = null;
   }
 
-  // ==============================
-  // E2E SAFE AUTH CHECK
-  // ==============================
   const isE2E =
     process.env.NODE_ENV === "test" ||
     process.env.PLAYWRIGHT === "true";
 
-  // Protect dashboard for real users
   if (!session && !isE2E) {
     redirect("/");
   }
 
-  // Block revoked tokens
   if ((session as any)?.error === "TokenRevoked") {
     redirect("/");
   }
 
-  // ==============================
-  // Dashboard widgets
-  // ==============================
   const widgets: WidgetItem[] = [
     { id: "prMetrics" },
     { id: "communityMetrics" },
@@ -119,14 +77,12 @@ export default async function DashboardPage() {
   return (
     <DashboardSSEProvider>
       <div className="min-h-screen bg-[var(--background)] p-4 text-[var(--foreground)] md:p-8">
-        
-        {/* Stable heading for Playwright */}
-        <h1 className="mb-4 text-3xl font-bold text-[var(--foreground)]">
-          Dashboard
-        </h1>
+
+        <h1 className="mb-4 text-3xl font-bold">Dashboard</h1>
 
         <DashboardHeader />
 
+        {/* ACTION BAR (ONLY ONCE) */}
         <div className="mb-6 flex items-center justify-end gap-2">
           <Link
             href="/wrapped"
@@ -147,15 +103,15 @@ export default async function DashboardPage() {
 
         <StreakAtRiskBanner />
 
-        <div className="mb-6 mt-6">
+        {/* WRAPPED BANNER (ONLY ONCE) */}
+        <div className="mt-6">
           <Link href="/wrapped">
-            <div className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-fuchsia-600 p-6 shadow-lg">
+            <div className="overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-fuchsia-600 p-6 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white">
                     Your Year in Code is here! ✨
                   </h2>
-
                   <p className="mt-1 text-white/90">
                     Discover your coding insights and habits.
                   </p>
@@ -176,14 +132,8 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <ContributionGraph />
-
-            <div className="mt-6">
-              <ContributionHeatmap />
-            </div>
-
-            <div className="mt-6">
-              <FriendComparison />
-            </div>
+            <div className="mt-6"><ContributionHeatmap /></div>
+            <div className="mt-6"><FriendComparison /></div>
           </div>
 
           <div>
@@ -196,7 +146,6 @@ export default async function DashboardPage() {
           <RepoAnalyticsExplorer />
         </div>
 
-        {/* Drag & Drop Widgets */}
         <div className="mt-6">
           <DashboardClient widgets={widgets} />
         </div>
@@ -239,6 +188,7 @@ export default async function DashboardPage() {
         <div className="mt-6">
           <RecentActivity />
         </div>
+
       </div>
     </DashboardSSEProvider>
   );
