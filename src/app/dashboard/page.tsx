@@ -79,6 +79,9 @@ const CommitTimeChart = dynamic(
   { ssr: false }
 );
 
+// =====================
+// Types
+// =====================
 type WidgetItem = {
   id: string;
   component: ComponentType<any>;
@@ -91,34 +94,23 @@ export default async function DashboardPage() {
   let session = null;
 
   // ==============================
-  // 🔥 SAFE SESSION HANDLING (FIX CI ERROR)
+  // SAFE SESSION HANDLING
   // ==============================
   try {
     session = await getServerSession(authOptions);
-  } catch (err) {
+  } catch {
     session = null;
   }
 
   // ==============================
-  // 🧪 CI / PLAYWRIGHT SAFETY MODE
+  // NORMAL AUTH CHECK
   // ==============================
   if (!session) {
-    if (process.env.NODE_ENV === "test") {
-      session = {
-        user: { name: "test-user" },
-        githubLogin: "test",
-      } as any;
-    } else {
-      return (
-        <div className="p-4 text-center text-gray-500">
-          Please login to view dashboard
-        </div>
-      );
-    }
+    redirect("/");
   }
 
   // ==============================
-  // Token revoked handling
+  // TOKEN REVOKED
   // ==============================
   if ((session as any)?.error === "TokenRevoked") {
     redirect("/");
@@ -170,10 +162,12 @@ export default async function DashboardPage() {
                   <h2 className="text-2xl font-bold text-white">
                     Your Year in Code is here! ✨
                   </h2>
+
                   <p className="mt-1 text-white/90">
                     Discover your coding insights and habits.
                   </p>
                 </div>
+
                 <div className="rounded-full bg-white px-6 py-2 font-bold text-purple-600">
                   View Wrapped
                 </div>
@@ -189,9 +183,11 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <ContributionGraph />
+
             <div className="mt-6">
               <ContributionHeatmap />
             </div>
+
             <div className="mt-6">
               <FriendComparison />
             </div>
