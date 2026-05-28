@@ -46,12 +46,11 @@ export default function DashboardHeader() {
 
         {/* Left Section */}
         <div>
-          <h1
-            aria-label="Dashboard"
-            className="bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-3xl font-extrabold text-transparent md:text-4xl"
-          >
-            Dashboard
-          </h1>
+          <h2
+  className="bg-gradient-to-r from-[var(--foreground)] via-[var(--foreground)] to-[var(--accent)] bg-clip-text text-3xl font-extrabold text-transparent md:text-4xl"
+>
+  Dashboard Overview
+</h2>
 
           <p
             className="mt-2 text-xs text-[var(--muted-foreground)]"
