@@ -106,8 +106,9 @@ export default async function DashboardPage() {
   // E2E SAFE AUTH CHECK
   // ==============================
   const isE2E =
-    process.env.NODE_ENV === "test" ||
-    process.env.PLAYWRIGHT === "true";
+  process.env.NODE_ENV === "test" ||
+  process.env.CI === "true" ||
+  process.env.PLAYWRIGHT === "true";
 
   if (!session && !isE2E) {
     redirect("/");
